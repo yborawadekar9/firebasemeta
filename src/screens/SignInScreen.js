@@ -1,39 +1,61 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform, TextInput, StatusBar } from 'react-native'
+import React, { useContext } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform, TextInput, StatusBar, Alert } from 'react-native'
 import * as Animatable from 'react-native-animatable';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
+import { useTheme } from 'react-native-paper';
+
+import { AuthContext } from '../components/context';
+
+import Users from '../../modal/modal';
 
 const SignInScreen = ({ navigation }) => {
+  const { colors } = useTheme();
+
   const [data, setData] = React.useState({
     email: '',
     password: '',
     check_textInputChange: false,
-    secureTextEntry: true
-  })
+    secureTextEntry: true,
+    isValidUser: true,
+    isValidPassword: true
+  });
+
+  const { signIn } = useContext(AuthContext);
 
   const textInputChange = (val) => {
-    if(val.length !== 0) {
+    if(val.trim().length >= 4) {
       setData({
         ...data,
         email:val,
-        check_textInputChange: true
+        check_textInputChange: true,
+        isValidUser: true
       })
     } else {
       setData({
         ...data,
         email:val,
-        check_textInputChange: false
+        check_textInputChange: false,
+        isValidUser: false
       })
     }
   }
 
   const handlePasswordChange = (val) => {
-    setData({
-      ...data,
-      password: val
-    });
+    if (val.trim().length >= 8 ){
+      setData({
+        ...data,
+        password: val,
+        isValidPassword: true
+      });
+    } else {
+      setData({
+        ...data,
+        password: val,
+        isValidPassword: false
+      });
+    }
   };
 
   const updateSecureTextEntry = () => {
@@ -41,6 +63,41 @@ const SignInScreen = ({ navigation }) => {
       ...data,
       secureTextEntry: !data.secureTextEntry
     });
+  };
+
+  const loginHandle = (username, password) => {
+    const foundUser = Users.filter( item => {
+      return username == item.username && password == item.password;
+    });
+
+    if( data.email.length == 0 || data.password.length == 0 ){
+      Alert.alert('Wrong Input!', 'Username or password field cannot be empty.', [
+        {text: 'Okay'}
+      ]);
+      return;
+    }
+
+    if( foundUser.length == 0 ){
+      Alert.alert('Invalid User!', 'Username or password is incorrect.', [
+        {text: 'Okay'}
+      ]);
+      return;
+    }
+    signIn(foundUser)
+  };
+
+  const handleValidUser = (val) => {
+    if ( val.trim().length >= 4 ) {
+      setData({
+        ...data,
+        isValidUser: true
+      });
+    } else {
+      setData({
+        ...data,
+        isValidUser: false
+      })
+    }
   };
 
   return (
@@ -51,20 +108,22 @@ const SignInScreen = ({ navigation }) => {
       </View>
       <Animatable.View 
         animation='fadeInUpBig'
-        style={styles.footer}
+        style={[styles.footer, {backgroundColor: colors.background}]}
       >
-        <Text style={styles.text_footer}>Email</Text>
+        <Text style={[styles.text_footer, {color:colors.text}]}>Email</Text>
         <View style={styles.action}>
           <FontAwesome
             name='user-o'
-            color='#05375a'
+            // color='#05375a'
+            color={colors.text}
             size={20}
           />
           <TextInput
             placeholder='Your Email'
-            style={styles.textInput}
+            style={[styles.textInput, {color:colors.text}]}
             autoCapitalize= 'none'
-            onChangeText={(val) => textInputChange(val)}
+            onChangeText={(val) => {textInputChange(val)}}
+            onEndEditing= {(e) => handleValidUser(e.nativeEvent.text)}
           />
           {data.check_textInputChange ? 
           <Animatable.View
@@ -78,17 +137,25 @@ const SignInScreen = ({ navigation }) => {
           </Animatable.View>
           : null }
         </View>
-        <Text style={[styles.text_footer, {marginTop: 35}]}>Password</Text>
+
+        { data.isValidUser ? null : 
+          <Animatable.View animation="fadeInLeft" duration={500}>
+            <Text style={styles.errorMsg}>Username must be 4 characters long.</Text>
+          </Animatable.View>
+        }
+
+        <Text style={[styles.text_footer,{color:colors.text}, {marginTop: 35}]}>Password</Text>
         <View style={styles.action}>
           <Feather
             name='lock'
-            color='#05375a'
+            // color='#05375a'
+            color={colors.text}
             size={20}
           />
           <TextInput
             placeholder='Your Password'
             secureTextEntry={data.secureTextEntry ? true : false }
-            style={styles.textInput}
+            style={[styles.textInput, {color:colors.text}]}
             autoCapitalize= 'none'
             onChangeText={(val) => handlePasswordChange(val)}
           />
@@ -108,11 +175,26 @@ const SignInScreen = ({ navigation }) => {
             }
           </TouchableOpacity>     
         </View>
+        
+        { data.isValidPassword ? null : 
+          <Animatable.View animation="fadeInLeft" duration={500}>
+            <Text style={styles.errorMsg}>Password must be 8 characters long.</Text>
+          </Animatable.View>
+        }
+
+        <TouchableOpacity>
+          <Text style={{color:'#009387', marginTop: 15}}>Forgot Password</Text>
+        </TouchableOpacity>
+
         <View style={styles.button}>
+          <TouchableOpacity 
+            style={styles.signIn} 
+            onPress={() => {loginHandle(data.email, data.password)}}
+          >
             <LinearGradient colors={['#08d4c4', '#01ab9d']} style={styles.signIn}>
               <Text style={[styles.textSign, {color:'#fff'}]}>Sign In</Text>
             </LinearGradient>
-
+          </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate('SignUpScreen')}
               style={[styles.signIn, {
@@ -131,7 +213,7 @@ const SignInScreen = ({ navigation }) => {
   )
 }
 
-export default SignInScreen
+export default SignInScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -188,5 +270,8 @@ const styles = StyleSheet.create({
   textSign: {
     fontSize: 18,
     fontWeight: 'bold'
+  },
+  errorMsg: {
+    color: 'red'
   }
 })

@@ -1,21 +1,24 @@
 import { StyleSheet, View } from 'react-native';
-import React from 'react';
+import React, { useContext } from 'react';
 import {
-    Avatar, Title, Caption, Paragraph, Drawer, Text, TouchableRipple, Switch
+    useTheme, Avatar, Title, Caption, Paragraph, Drawer, Text, TouchableRipple, Switch
 } from 'react-native-paper';
 import {
     DrawerContentScrollView, DrawerItem
 } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { color } from 'react-native-reanimated';
+// import { color } from 'react-native-reanimated';
+import { AuthContext } from '../components/context';
 
 const DrawerContent = (props) => {
-    const [isDarkTheme, setIsDarkTheme] = React.useState(false);
+    const paperTheme = useTheme();
 
-    const toggleTheme = () => {
-        // setIsDarkTheme(previousState => !previousState);
-        isDarkTheme ? setIsDarkTheme(false) : setIsDarkTheme(true);
-    };
+    const { signOut, toggleTheme } = useContext(AuthContext);
+
+    // const toggleTheme = () => {
+    //     // setIsDarkTheme(previousState => !previousState);
+    //     isDarkTheme ? setIsDarkTheme(false) : setIsDarkTheme(true);
+    // };
 
   return (
     <View style= {{flex: 1}}>
@@ -103,7 +106,7 @@ const DrawerContent = (props) => {
                         <View style={styles.preference}>
                             <Text>Dark Theme</Text>
                             <View pointerEvents='none'>
-                                <Switch value={isDarkTheme} />
+                                <Switch value={paperTheme.dark} />
                             </View>
                         </View>
                     </TouchableRipple>
@@ -120,7 +123,7 @@ const DrawerContent = (props) => {
                     />
                 )}
                 label="Sign Out"
-                onPress={() => {}}
+                onPress={() => {signOut()}}
             />
         </Drawer.Section>
     </View>
